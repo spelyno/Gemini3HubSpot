@@ -11,6 +11,7 @@ import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES, MOCK_NOTIFICATI
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItem>('dashboard');
+  const [history, setHistory] = useState<NavItem[]>([]); // Track navigation history
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // App State
@@ -30,6 +31,24 @@ const App: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Handlers
+  const navigateTo = (tab: NavItem) => {
+    if (activeTab === tab) return;
+    setHistory(prev => [...prev, activeTab]);
+    setActiveTab(tab);
+  };
+
+  const handleBack = () => {
+    if (history.length > 0) {
+      const newHistory = [...history];
+      const prevTab = newHistory.pop();
+      setHistory(newHistory);
+      if (prevTab) setActiveTab(prevTab);
+    } else {
+      // Fallback
+      setActiveTab('dashboard');
+    }
+  };
+
   const handleUpdateContact = (updated: Contact) => {
     setContacts(prev => prev.map(c => c.id === updated.id ? updated : c));
   };
@@ -81,7 +100,7 @@ const App: React.FC = () => {
 
   const handleDrillDown = (stage: DealStage) => {
     setDealFilter(stage);
-    setActiveTab('deals');
+    navigateTo('deals');
   };
 
   // Close dropdowns when clicking outside
@@ -127,7 +146,7 @@ const App: React.FC = () => {
             <button
               key={item.id}
               onClick={() => {
-                setActiveTab(item.id);
+                navigateTo(item.id);
                 if (item.id === 'deals') setDealFilter(null); // Clear filter when manually navigating
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -162,9 +181,9 @@ const App: React.FC = () => {
             
             {activeTab !== 'dashboard' && (
               <button 
-                onClick={() => setActiveTab('dashboard')} 
+                onClick={handleBack} 
                 className="p-2 -ml-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                title="Back to Dashboard"
+                title="Go Back"
               >
                 <ArrowLeft size={20} />
               </button>
@@ -264,7 +283,7 @@ const App: React.FC = () => {
                   <div className="p-2 space-y-1">
                     <button 
                       onClick={() => {
-                        setActiveTab('profile');
+                        navigateTo('profile');
                         setShowProfileMenu(false);
                       }}
                       className="w-full text-left px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-indigo-400 rounded-lg flex items-center gap-2 transition-colors"
@@ -302,7 +321,7 @@ const App: React.FC = () => {
                   <button
                     key={item.id}
                     onClick={() => {
-                      setActiveTab(item.id);
+                      navigateTo(item.id);
                       if (item.id === 'deals') setDealFilter(null);
                       setIsMobileMenuOpen(false);
                     }}
