@@ -122,20 +122,35 @@ const App: React.FC = () => {
     
     await db.deals.update(updated);
 
-    // Check if stage changed for logging
-    if (oldDeal && oldDeal.stage !== updated.stage) {
-      const log: ActivityLog = {
-        id: `a${Date.now()}`,
-        type: 'update',
-        user: currentUser.name,
-        action: 'Deal Stage Changed',
-        details: `Moved "${updated.title}" to ${updated.stage}`,
-        timestamp: new Date().toISOString(),
-        entityId: updated.id,
-        entityType: 'deal'
-      };
-      await db.activities.add(log);
-      setActivities(prev => [log, ...prev]);
+    // Check for changes to log
+    if (oldDeal) {
+      if (oldDeal.stage !== updated.stage) {
+        const log: ActivityLog = {
+          id: `a${Date.now()}`,
+          type: 'update',
+          user: currentUser.name,
+          action: 'Deal Stage Changed',
+          details: `Moved "${updated.title}" to ${updated.stage}`,
+          timestamp: new Date().toISOString(),
+          entityId: updated.id,
+          entityType: 'deal'
+        };
+        await db.activities.add(log);
+        setActivities(prev => [log, ...prev]);
+      } else if (oldDeal.amount !== updated.amount) {
+        const log: ActivityLog = {
+          id: `a${Date.now()}`,
+          type: 'update',
+          user: currentUser.name,
+          action: 'Deal Value Updated',
+          details: `Updated "${updated.title}" amount from $${oldDeal.amount.toLocaleString()} to $${updated.amount.toLocaleString()}`,
+          timestamp: new Date().toISOString(),
+          entityId: updated.id,
+          entityType: 'deal'
+        };
+        await db.activities.add(log);
+        setActivities(prev => [log, ...prev]);
+      }
     }
   };
 
@@ -233,7 +248,9 @@ const App: React.FC = () => {
       contacts,
       deals,
       tasks,
-      activities
+      activities,
+      notifications,
+      user: currentUser
     };
 
     const response = await GeminiService.askAiAboutData(searchQuery, contextData);

@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { Contact, Deal, Task, ActivityLog } from '../types';
+import { Contact, Deal, Task, ActivityLog, Notification, UserProfile } from '../types';
 
 // Initialize the Gemini API client
 // Note: process.env.API_KEY is assumed to be available as per instructions.
@@ -110,7 +110,9 @@ export const GeminiService = {
       contacts: Contact[], 
       deals: Deal[], 
       tasks: Task[], 
-      activities: ActivityLog[] 
+      activities: ActivityLog[],
+      notifications: Notification[],
+      user: UserProfile
     }
   ): Promise<string> {
     try {
@@ -132,8 +134,9 @@ export const GeminiService = {
         2. If the user asks for a list (e.g., "Show me deals over 10k"), list them with key details (Name, Amount, Stage).
         3. If the user asks for an aggregation (e.g., "Total revenue"), calculate it accurately based on the data.
         4. If the user asks about a specific person or deal, provide a summary of their record.
-        5. Use professional, concise language.
-        6. Format your response using clean Markdown (bolding key terms, using lists).
+        5. If the user asks about notifications or their own profile, use the 'notifications' and 'user' data provided.
+        6. Use professional, concise language.
+        7. Format your response using clean Markdown (bolding key terms, using lists).
 
         If the answer cannot be found in the data, politely say so.
       `;
