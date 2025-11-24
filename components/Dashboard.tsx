@@ -9,11 +9,12 @@ import { DollarSign, TrendingUp, Users, CheckSquare } from 'lucide-react';
 interface DashboardProps {
   deals: Deal[];
   tasks: Task[];
+  onDrillDown: (stage: DealStage) => void;
 }
 
 const COLORS = ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'];
 
-const Dashboard: React.FC<DashboardProps> = ({ deals, tasks }) => {
+const Dashboard: React.FC<DashboardProps> = ({ deals, tasks, onDrillDown }) => {
   // Calculate Metrics
   const totalRevenue = deals.reduce((sum, deal) => sum + deal.amount, 0);
   const wonRevenue = deals.filter(d => d.stage === DealStage.WON).reduce((sum, d) => sum + d.amount, 0);
@@ -22,7 +23,8 @@ const Dashboard: React.FC<DashboardProps> = ({ deals, tasks }) => {
 
   // Prepare Chart Data
   const dealsByStage = Object.values(DealStage).map(stage => ({
-    name: stage.split(' ')[0], // Short name
+    name: stage.split(' ')[0], // Short name for display
+    fullName: stage, // Full name for logic
     value: deals.filter(d => d.stage === stage).length,
     amount: deals.filter(d => d.stage === stage).reduce((s, d) => s + d.amount, 0)
   }));
@@ -33,42 +35,42 @@ const Dashboard: React.FC<DashboardProps> = ({ deals, tasks }) => {
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric Cards */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
           <div>
-            <p className="text-sm font-medium text-slate-500">Total Pipeline</p>
-            <p className="text-2xl font-bold text-slate-900">${totalRevenue.toLocaleString()}</p>
+            <p className="text-sm font-medium text-slate-400">Total Pipeline</p>
+            <p className="text-2xl font-bold text-white mt-1">${totalRevenue.toLocaleString()}</p>
           </div>
-          <div className="p-3 bg-indigo-50 rounded-lg text-indigo-600">
+          <div className="p-3 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-colors">
             <TrendingUp size={24} />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 flex items-center justify-between group hover:border-emerald-500/30 transition-all">
           <div>
-            <p className="text-sm font-medium text-slate-500">Closed Won</p>
-            <p className="text-2xl font-bold text-emerald-600">${wonRevenue.toLocaleString()}</p>
+            <p className="text-sm font-medium text-slate-400">Closed Won</p>
+            <p className="text-2xl font-bold text-emerald-400 mt-1">${wonRevenue.toLocaleString()}</p>
           </div>
-          <div className="p-3 bg-emerald-50 rounded-lg text-emerald-600">
+          <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
             <DollarSign size={24} />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 flex items-center justify-between group hover:border-blue-500/30 transition-all">
           <div>
-            <p className="text-sm font-medium text-slate-500">Open Deals</p>
-            <p className="text-2xl font-bold text-slate-900">{openDealsCount}</p>
+            <p className="text-sm font-medium text-slate-400">Open Deals</p>
+            <p className="text-2xl font-bold text-white mt-1">{openDealsCount}</p>
           </div>
-          <div className="p-3 bg-blue-50 rounded-lg text-blue-600">
+          <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors">
             <Users size={24} />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 flex items-center justify-between group hover:border-amber-500/30 transition-all">
           <div>
-            <p className="text-sm font-medium text-slate-500">Pending Tasks</p>
-            <p className="text-2xl font-bold text-amber-600">{pendingTasksCount}</p>
+            <p className="text-sm font-medium text-slate-400">Pending Tasks</p>
+            <p className="text-2xl font-bold text-amber-400 mt-1">{pendingTasksCount}</p>
           </div>
-          <div className="p-3 bg-amber-50 rounded-lg text-amber-600">
+          <div className="p-3 bg-amber-500/10 rounded-lg text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20 transition-colors">
             <CheckSquare size={24} />
           </div>
         </div>
@@ -76,25 +78,37 @@ const Dashboard: React.FC<DashboardProps> = ({ deals, tasks }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 h-96">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Pipeline Value by Stage</h3>
+        <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 h-96">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4">Pipeline Value by Stage <span className="text-xs font-normal text-slate-500 ml-2">(Click bar to drill down)</span></h3>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={salesForecastData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
               <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val/1000}k`} />
               <Tooltip 
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                cursor={{ fill: '#1e293b' }}
+                contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#f8fafc', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.5)' }}
+                itemStyle={{ color: '#e2e8f0' }}
               />
-              <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40} />
+              <Bar 
+                dataKey="amount" 
+                fill="#6366f1" 
+                radius={[4, 4, 0, 0]} 
+                barSize={40}
+                onClick={(data) => {
+                  if (data && data.fullName) {
+                    onDrillDown(data.fullName as DealStage);
+                  }
+                }}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Deal Count Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 h-96">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Deal Count by Stage</h3>
+        <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 h-96">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4">Deal Count by Stage <span className="text-xs font-normal text-slate-500 ml-2">(Click slice to drill down)</span></h3>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -106,17 +120,31 @@ const Dashboard: React.FC<DashboardProps> = ({ deals, tasks }) => {
                 fill="#8884d8"
                 paddingAngle={5}
                 dataKey="value"
+                onClick={(data) => {
+                  if (data && data.fullName) {
+                    onDrillDown(data.fullName as DealStage);
+                  }
+                }}
+                className="cursor-pointer focus:outline-none"
               >
                 {dealsByStage.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]} 
+                    className="hover:opacity-80 transition-opacity cursor-pointer stroke-slate-900"
+                    strokeWidth={2}
+                  />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#f8fafc', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.5)' }}
+                itemStyle={{ color: '#e2e8f0' }}
+              />
             </PieChart>
           </ResponsiveContainer>
-          <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-slate-600">
+          <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-slate-400">
              {dealsByStage.map((d, i) => (
-               <div key={d.name} className="flex items-center gap-1">
+               <div key={d.name} className="flex items-center gap-2">
                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
                  {d.name} ({d.value})
                </div>

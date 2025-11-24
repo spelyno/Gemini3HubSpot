@@ -23,37 +23,37 @@ const AuditLog: React.FC<AuditLogProps> = ({ activities }) => {
 
   const getTypeColor = (type: string) => {
     switch(type) {
-      case 'create': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'delete': return 'bg-red-100 text-red-700 border-red-200';
-      case 'update': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'system': return 'bg-slate-100 text-slate-700 border-slate-200';
-      default: return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      case 'create': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      case 'delete': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      case 'update': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'system': return 'bg-slate-700/30 text-slate-400 border-slate-600/30';
+      default: return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in">
+    <div className="flex flex-col h-full bg-slate-900 rounded-xl shadow-sm border border-slate-800 overflow-hidden animate-fade-in">
       {/* Header */}
-      <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Audit Log</h2>
+          <h2 className="text-xl font-bold text-slate-100">Audit Log</h2>
           <p className="text-slate-500 text-sm">Track system activities and user actions</p>
         </div>
         
         <div className="flex gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input 
               type="text" 
               placeholder="Search logs..." 
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-200 placeholder-slate-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="relative">
              <select 
-               className="appearance-none bg-slate-50 border border-slate-200 rounded-lg pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+               className="appearance-none bg-slate-950 border border-slate-700 rounded-lg pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer text-slate-200"
                value={filterType}
                onChange={(e) => setFilterType(e.target.value)}
              >
@@ -65,36 +65,36 @@ const AuditLog: React.FC<AuditLogProps> = ({ activities }) => {
                <option value="call">Call</option>
                <option value="system">System</option>
              </select>
-             <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+             <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto custom-scrollbar">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
+          <thead className="bg-slate-950 sticky top-0 z-10 shadow-sm shadow-black/10">
             <tr>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase w-48">Timestamp</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase w-48">User</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase w-32">Type</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase">Action & Details</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase w-32">Entity</th>
+              <th className="p-4 text-xs font-semibold text-slate-400 uppercase w-48">Timestamp</th>
+              <th className="p-4 text-xs font-semibold text-slate-400 uppercase w-48">User</th>
+              <th className="p-4 text-xs font-semibold text-slate-400 uppercase w-32">Type</th>
+              <th className="p-4 text-xs font-semibold text-slate-400 uppercase">Action & Details</th>
+              <th className="p-4 text-xs font-semibold text-slate-400 uppercase w-32">Entity</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-800">
             {filteredActivities.length > 0 ? (
               filteredActivities.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 text-sm text-slate-600">
+                <tr key={log.id} className="hover:bg-slate-800/50 transition-colors">
+                  <td className="p-4 text-sm text-slate-500">
                     <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-slate-400" />
+                      <Clock size={14} className="text-slate-600" />
                       {new Date(log.timestamp).toLocaleString()}
                     </div>
                   </td>
-                  <td className="p-4 text-sm text-slate-900 font-medium">
+                  <td className="p-4 text-sm text-slate-200 font-medium">
                     <div className="flex items-center gap-2">
-                       <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold">
+                       <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-400 font-bold border border-slate-700">
                          {log.user.charAt(0)}
                        </div>
                        {log.user}
@@ -107,7 +107,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ activities }) => {
                   </td>
                   <td className="p-4">
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{log.action}</p>
+                      <p className="text-sm font-semibold text-slate-200">{log.action}</p>
                       <p className="text-sm text-slate-500 mt-0.5">{log.details}</p>
                     </div>
                   </td>
@@ -123,7 +123,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ activities }) => {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-slate-400">
+                <td colSpan={5} className="p-8 text-center text-slate-500">
                   No logs found matching your criteria.
                 </td>
               </tr>
