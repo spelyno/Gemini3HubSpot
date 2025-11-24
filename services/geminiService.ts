@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { Contact, Deal } from '../types';
+import { Contact, Deal, Task, ActivityLog } from '../types';
 
 // Initialize the Gemini API client
 // Note: process.env.API_KEY is assumed to be available as per instructions.
@@ -97,6 +97,56 @@ export const GeminiService = {
         return response.text || "No summary available.";
     } catch (error) {
         return "Error summarizing contact.";
+    }
+  },
+
+  /**
+   * Global AI Search Assistant
+   * Answers questions about the CRM data.
+   */
+  async askAiAboutData(
+    query: string, 
+    data: { 
+      contacts: Contact[], 
+      deals: Deal[], 
+      tasks: Task[], 
+      activities: ActivityLog[] 
+    }
+  ): Promise<string> {
+    try {
+      // We reduce the data context to essential fields to save tokens if necessary, 
+      // but for this size, full JSON is fine.
+      const dataContext = JSON.stringify(data);
+
+      const prompt = `
+        You are Nexus AI, an intelligent CRM assistant built into the Nexus CRM platform.
+        You have direct access to the current database state provided below in JSON format.
+
+        DATABASE CONTEXT:
+        ${dataContext}
+
+        USER QUERY: "${query}"
+
+        INSTRUCTIONS:
+        1. Search the provided database context to find the answer.
+        2. If the user asks for a list (e.g., "Show me deals over 10k"), list them with key details (Name, Amount, Stage).
+        3. If the user asks for an aggregation (e.g., "Total revenue"), calculate it accurately based on the data.
+        4. If the user asks about a specific person or deal, provide a summary of their record.
+        5. Use professional, concise language.
+        6. Format your response using clean Markdown (bolding key terms, using lists).
+
+        If the answer cannot be found in the data, politely say so.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+      });
+
+      return response.text || "I processed your request but couldn't generate a response.";
+    } catch (error) {
+      console.error("Gemini Global Search Error:", error);
+      return "I encountered an error while searching your data. Please try again.";
     }
   }
 };

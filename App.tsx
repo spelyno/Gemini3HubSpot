@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList, LogOut, User, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList, LogOut, User, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Contacts from './components/Contacts';
 import Deals from './components/Deals';
@@ -8,6 +8,7 @@ import AuditLog from './components/AuditLog';
 import Profile from './components/Profile';
 import { NavItem, Contact, Deal, Task, DealStage, ActivityLog, Notification, UserProfile } from './types';
 import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES, MOCK_NOTIFICATIONS, MOCK_USER } from './constants';
+import { GeminiService } from './services/geminiService';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItem>('dashboard');
@@ -24,9 +25,16 @@ const App: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [dealFilter, setDealFilter] = useState<DealStage | null>(null);
+
+  // AI Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAiThinking, setIsAiThinking] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -103,6 +111,30 @@ const App: React.FC = () => {
     navigateTo('deals');
   };
 
+  // AI Global Search Handler
+  const handleGlobalSearch = async (e: React.KeyboardEvent<HTMLInputElement> | React.FormEvent) => {
+    // Only trigger on Enter key if it's a keyboard event
+    if ('key' in e && e.key !== 'Enter') return;
+    e.preventDefault();
+
+    if (!searchQuery.trim()) return;
+
+    setShowSearchModal(true);
+    setIsAiThinking(true);
+    setAiResponse(null);
+
+    const contextData = {
+      contacts,
+      deals,
+      tasks,
+      activities
+    };
+
+    const response = await GeminiService.askAiAboutData(searchQuery, contextData);
+    setAiResponse(response);
+    setIsAiThinking(false);
+  };
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -113,6 +145,10 @@ const App: React.FC = () => {
       // Profile Menu
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
+      }
+      // Search Modal
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSearchModal(false);
       }
     };
 
@@ -195,9 +231,50 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center bg-slate-800 rounded-lg px-3 py-2 w-64 border border-slate-700 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
-              <Search size={18} className="text-slate-500" />
-              <input type="text" placeholder="Global search..." className="bg-transparent border-none outline-none text-sm ml-2 w-full text-slate-200 placeholder-slate-500" />
+            
+            {/* Global Search / AI Chat */}
+            <div className="relative z-50" ref={searchContainerRef}>
+              <div className={`hidden md:flex items-center bg-slate-800 rounded-lg px-3 py-2 w-64 lg:w-96 border transition-all ${showSearchModal ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-slate-700 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500'}`}>
+                {isAiThinking ? <Loader2 size={18} className="text-indigo-400 animate-spin" /> : <Search size={18} className="text-slate-500" />}
+                <input 
+                  type="text" 
+                  placeholder="Ask Nexus AI (e.g., 'Show deals over 10k')..." 
+                  className="bg-transparent border-none outline-none text-sm ml-2 w-full text-slate-200 placeholder-slate-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleGlobalSearch}
+                  onFocus={() => { if(aiResponse) setShowSearchModal(true) }}
+                />
+                <Sparkles size={16} className="text-indigo-400 opacity-70 ml-2" />
+              </div>
+
+              {/* Search Result / AI Modal */}
+              {showSearchModal && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 rounded-xl shadow-2xl shadow-black/50 border border-slate-800 p-4 min-h-[100px] animate-fade-in z-50">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2 text-indigo-400 font-medium text-sm">
+                      <Sparkles size={14} />
+                      <span>Nexus AI</span>
+                    </div>
+                    <button onClick={() => setShowSearchModal(false)} className="text-slate-500 hover:text-slate-300">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  
+                  {isAiThinking ? (
+                    <div className="py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Analyzing database...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap max-h-[60vh] overflow-y-auto custom-scrollbar">
+                      {aiResponse || "Ask me anything about your contacts, deals, or tasks."}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             <div className="relative" ref={notificationRef}>
