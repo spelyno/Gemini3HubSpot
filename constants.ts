@@ -22,7 +22,62 @@ export const MOCK_TASKS: Task[] = [
 ];
 
 export const MOCK_ACTIVITIES: ActivityLog[] = [
-  { id: 'a1', type: 'email', description: 'Sent proposal v2', timestamp: '2023-10-25T14:30:00Z', contactId: 'c1' },
-  { id: 'a2', type: 'call', description: 'Discovery call - went well', timestamp: '2023-10-28T10:00:00Z', contactId: 'c2' },
-  { id: 'a3', type: 'meeting', description: 'Demo with engineering team', timestamp: '2023-10-20T11:00:00Z', contactId: 'c3' },
+  { 
+    id: 'a1', 
+    type: 'email', 
+    user: 'Sarah Sales',
+    action: 'Sent Proposal Email',
+    details: 'Sent proposal v2 to Alice Johnson regarding Enterprise License',
+    timestamp: '2023-10-25T14:30:00Z', 
+    entityId: 'c1',
+    entityType: 'contact'
+  },
+  { 
+    id: 'a2', 
+    type: 'call', 
+    user: 'Mike Manager',
+    action: 'Discovery Call',
+    details: 'Discussed requirements with Bob Smith. Client is interested in Q4 deployment.',
+    timestamp: '2023-10-28T10:00:00Z', 
+    entityId: 'c2',
+    entityType: 'contact'
+  },
+  { 
+    id: 'a3', 
+    type: 'update', 
+    user: 'Sarah Sales',
+    action: 'Updated Deal Stage',
+    details: 'Moved "Avengers Global Rollout" from Qualified to Proposal Sent',
+    timestamp: '2023-10-20T11:00:00Z', 
+    entityId: 'd3',
+    entityType: 'deal'
+  },
+  {
+    id: 'a4',
+    type: 'system',
+    user: 'System Admin',
+    action: 'System Maintenance',
+    details: 'Scheduled maintenance completed successfully',
+    timestamp: '2023-10-15T02:00:00Z',
+    entityType: 'system'
+  },
+  {
+    id: 'a5',
+    type: 'create',
+    user: 'Mike Manager',
+    action: 'Created New Lead',
+    details: 'Added David Bowman from Discovery One manually',
+    timestamp: '2023-10-15T09:30:00Z',
+    entityId: 'c4',
+    entityType: 'contact'
+  },
+  {
+    id: 'a6',
+    type: 'delete',
+    user: 'Sarah Sales',
+    action: 'Deleted Task',
+    details: 'Removed outdated task "Call John Doe"',
+    timestamp: '2023-10-18T16:45:00Z',
+    entityType: 'task'
+  }
 ];

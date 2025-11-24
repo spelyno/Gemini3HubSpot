@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Contacts from './components/Contacts';
 import Deals from './components/Deals';
 import Tasks from './components/Tasks';
-import { NavItem, Contact, Deal, Task, DealStage } from './types';
-import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS } from './constants';
+import AuditLog from './components/AuditLog';
+import { NavItem, Contact, Deal, Task, DealStage, ActivityLog } from './types';
+import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES } from './constants';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItem>('dashboard');
@@ -15,6 +16,7 @@ const App: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
   const [deals, setDeals] = useState<Deal[]>(MOCK_DEALS);
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  const [activities] = useState<ActivityLog[]>(MOCK_ACTIVITIES);
 
   // Handlers
   const handleUpdateContact = (updated: Contact) => {
@@ -59,6 +61,7 @@ const App: React.FC = () => {
     { id: 'contacts', label: 'Contacts', icon: <Users size={20} /> },
     { id: 'deals', label: 'Deals', icon: <Kanban size={20} /> },
     { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={20} /> },
+    { id: 'audit', label: 'Audit Log', icon: <ClipboardList size={20} /> },
   ];
 
   return (
@@ -161,6 +164,7 @@ const App: React.FC = () => {
           {activeTab === 'contacts' && <Contacts contacts={contacts} onUpdateContact={handleUpdateContact} />}
           {activeTab === 'deals' && <Deals deals={deals} contacts={contacts} onUpdateDeal={handleUpdateDeal} onAddDeal={handleAddDeal} />}
           {activeTab === 'tasks' && <Tasks tasks={tasks} onToggleTask={handleToggleTask} onAddTask={handleAddTask} />}
+          {activeTab === 'audit' && <AuditLog activities={activities} />}
         </div>
 
       </main>

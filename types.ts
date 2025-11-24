@@ -1,4 +1,4 @@
-export type NavItem = 'dashboard' | 'contacts' | 'deals' | 'tasks' | 'settings';
+export type NavItem = 'dashboard' | 'contacts' | 'deals' | 'tasks' | 'audit' | 'settings';
 
 export enum DealStage {
   NEW = 'New Lead',
@@ -41,8 +41,11 @@ export interface Task {
 
 export interface ActivityLog {
   id: string;
-  type: 'email' | 'call' | 'meeting' | 'note';
-  description: string;
+  type: 'email' | 'call' | 'meeting' | 'note' | 'create' | 'update' | 'delete' | 'system';
+  user: string; // User who performed the action
+  action: string; // Short summary
+  details: string; // Specific details
   timestamp: string;
-  contactId?: string;
+  entityId?: string; // ID of the object affected
+  entityType?: 'contact' | 'deal' | 'task' | 'system';
 }
