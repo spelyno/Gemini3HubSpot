@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Contacts from './components/Contacts';
 import Deals from './components/Deals';
 import Tasks from './components/Tasks';
 import AuditLog from './components/AuditLog';
-import { NavItem, Contact, Deal, Task, DealStage, ActivityLog } from './types';
-import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES } from './constants';
+import { NavItem, Contact, Deal, Task, DealStage, ActivityLog, Notification } from './types';
+import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES, MOCK_NOTIFICATIONS } from './constants';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItem>('dashboard');
@@ -17,6 +17,11 @@ const App: React.FC = () => {
   const [deals, setDeals] = useState<Deal[]>(MOCK_DEALS);
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
   const [activities] = useState<ActivityLog[]>(MOCK_ACTIVITIES);
+  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Handlers
   const handleUpdateContact = (updated: Contact) => {
@@ -54,6 +59,28 @@ const App: React.FC = () => {
     };
     setTasks([newTask, ...tasks]);
   };
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const handleNotificationClick = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Nav Items Configuration
   const navItems: { id: NavItem; label: string; icon: React.ReactNode }[] = [
@@ -119,10 +146,66 @@ const App: React.FC = () => {
               <input type="text" placeholder="Global search..." className="bg-transparent border-none outline-none text-sm ml-2 w-full text-slate-700 placeholder-slate-400" />
             </div>
             
-            <button className="relative text-slate-500 hover:text-indigo-600 transition-colors">
-              <Bell size={20} />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+            <div className="relative" ref={notificationRef}>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative text-slate-500 hover:text-indigo-600 transition-colors p-2"
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-fade-in ring-1 ring-slate-200">
+                  <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 className="font-semibold text-slate-800">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={handleMarkAllRead}
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center text-slate-400 text-sm">
+                        No notifications yet.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100">
+                        {notifications.map(notification => (
+                          <div 
+                            key={notification.id}
+                            onClick={() => handleNotificationClick(notification.id)}
+                            className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer ${!notification.read ? 'bg-indigo-50/30' : ''}`}
+                          >
+                            <div className="flex gap-3">
+                              <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!notification.read ? 'bg-indigo-500' : 'bg-slate-300'}`}></div>
+                              <div className="flex-1">
+                                <p className={`text-sm ${!notification.read ? 'font-semibold text-slate-800' : 'font-medium text-slate-600'}`}>
+                                  {notification.title}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                  {notification.message}
+                                </p>
+                                <p className="text-[10px] text-slate-400 mt-2">
+                                  {new Date(notification.timestamp).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border-2 border-white shadow-sm cursor-pointer"></div>
           </div>

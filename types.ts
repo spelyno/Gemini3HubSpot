@@ -49,3 +49,12 @@ export interface ActivityLog {
   entityId?: string; // ID of the object affected
   entityType?: 'contact' | 'deal' | 'task' | 'system';
 }
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  type: 'info' | 'success' | 'warning' | 'alert';
+}

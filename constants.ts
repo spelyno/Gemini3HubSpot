@@ -1,4 +1,4 @@
-import { Contact, Deal, DealStage, Task, ActivityLog } from './types';
+import { Contact, Deal, DealStage, Task, ActivityLog, Notification } from './types';
 
 export const MOCK_CONTACTS: Contact[] = [
   { id: 'c1', firstName: 'Alice', lastName: 'Johnson', email: 'alice@techcorp.com', phone: '+1 555-0101', company: 'TechCorp', position: 'CTO', lastContacted: '2023-10-25', notes: 'Interested in enterprise plan. Concerns about security compliance.' },
@@ -80,4 +80,39 @@ export const MOCK_ACTIVITIES: ActivityLog[] = [
     timestamp: '2023-10-18T16:45:00Z',
     entityType: 'task'
   }
+];
+
+export const MOCK_NOTIFICATIONS: Notification[] = [
+  { 
+    id: 'n1', 
+    title: 'New Lead Assigned', 
+    message: 'You have been assigned a new lead: Sarah Connor.', 
+    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
+    read: false, 
+    type: 'info' 
+  },
+  { 
+    id: 'n2', 
+    title: 'Task Due Soon', 
+    message: 'Prepare slide deck is due tomorrow.', 
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    read: false, 
+    type: 'warning' 
+  },
+  { 
+    id: 'n3', 
+    title: 'Deal Won', 
+    message: 'The TechCorp Enterprise License deal was closed won!', 
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+    read: true, 
+    type: 'success' 
+  },
+  { 
+    id: 'n4', 
+    title: 'System Update', 
+    message: 'Nexus CRM will undergo maintenance tonight at 2 AM.', 
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
+    read: true, 
+    type: 'alert' 
+  },
 ];
