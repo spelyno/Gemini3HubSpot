@@ -1,27 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList, LogOut, User, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList, LogOut, User, ArrowLeft, Sparkles, Loader2, Database } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Contacts from './components/Contacts';
 import Deals from './components/Deals';
 import Tasks from './components/Tasks';
-import AuditLog from './components/AuditLog';
+import AuditLogComponent from './components/AuditLog';
 import Profile from './components/Profile';
 import { NavItem, Contact, Deal, Task, DealStage, ActivityLog, Notification, UserProfile } from './types';
-import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES, MOCK_NOTIFICATIONS, MOCK_USER } from './constants';
+import { MOCK_USER } from './constants';
 import { GeminiService } from './services/geminiService';
+import { db } from './services/db';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItem>('dashboard');
   const [history, setHistory] = useState<NavItem[]>([]); // Track navigation history
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // App State
   const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USER);
-  const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
-  const [deals, setDeals] = useState<Deal[]>(MOCK_DEALS);
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
-  const [activities] = useState<ActivityLog[]>(MOCK_ACTIVITIES);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [dealFilter, setDealFilter] = useState<DealStage | null>(null);
@@ -37,6 +40,39 @@ const App: React.FC = () => {
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Initialize DB and Fetch Data
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        await db.init();
+        await refreshData();
+      } catch (error) {
+        console.error("Failed to initialize database", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initApp();
+  }, []);
+
+  const refreshData = async () => {
+    const [fetchedContacts, fetchedDeals, fetchedTasks, fetchedActivities, fetchedNotifications, fetchedUser] = await Promise.all([
+      db.contacts.getAll(),
+      db.deals.getAll(),
+      db.tasks.getAll(),
+      db.activities.getAll(),
+      db.notifications.getAll(),
+      db.user.get()
+    ]);
+
+    setContacts(fetchedContacts);
+    setDeals(fetchedDeals);
+    setTasks(fetchedTasks);
+    setActivities(fetchedActivities);
+    setNotifications(fetchedNotifications);
+    setCurrentUser(fetchedUser);
+  };
 
   // Handlers
   const navigateTo = (tab: NavItem) => {
@@ -57,19 +93,58 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateContact = (updated: Contact) => {
+  const handleUpdateContact = async (updated: Contact) => {
+    // Optimistic Update
     setContacts(prev => prev.map(c => c.id === updated.id ? updated : c));
+    
+    await db.contacts.update(updated);
+    
+    // Log Activity
+    const log: ActivityLog = {
+      id: `a${Date.now()}`,
+      type: 'update',
+      user: currentUser.name,
+      action: 'Updated Contact',
+      details: `Updated details for ${updated.firstName} ${updated.lastName}`,
+      timestamp: new Date().toISOString(),
+      entityId: updated.id,
+      entityType: 'contact'
+    };
+    await db.activities.add(log);
+    setActivities(prev => [log, ...prev]);
   };
 
-  const handleUpdateDeal = (updated: Deal) => {
+  const handleUpdateDeal = async (updated: Deal) => {
+    const oldDeal = deals.find(d => d.id === updated.id);
+    
+    // Optimistic Update
     setDeals(prev => prev.map(d => d.id === updated.id ? updated : d));
+    
+    await db.deals.update(updated);
+
+    // Check if stage changed for logging
+    if (oldDeal && oldDeal.stage !== updated.stage) {
+      const log: ActivityLog = {
+        id: `a${Date.now()}`,
+        type: 'update',
+        user: currentUser.name,
+        action: 'Deal Stage Changed',
+        details: `Moved "${updated.title}" to ${updated.stage}`,
+        timestamp: new Date().toISOString(),
+        entityId: updated.id,
+        entityType: 'deal'
+      };
+      await db.activities.add(log);
+      setActivities(prev => [log, ...prev]);
+    }
   };
 
-  const handleUpdateProfile = (updatedUser: UserProfile) => {
+  const handleUpdateProfile = async (updatedUser: UserProfile) => {
+    await db.user.update(updatedUser);
     setCurrentUser(updatedUser);
   };
 
-  const handleAddDeal = () => {
+  const handleAddDeal = async () => {
     const newDeal: Deal = {
       id: `d${Date.now()}`,
       title: 'New Deal Opportunity',
@@ -79,31 +154,63 @@ const App: React.FC = () => {
       closeDate: new Date().toISOString().split('T')[0],
       probability: 10
     };
-    setDeals([newDeal, ...deals]);
+
+    await db.deals.add(newDeal);
+    
+    const log: ActivityLog = {
+      id: `a${Date.now()}`,
+      type: 'create',
+      user: currentUser.name,
+      action: 'Created Deal',
+      details: `Created new deal "${newDeal.title}"`,
+      timestamp: new Date().toISOString(),
+      entityId: newDeal.id,
+      entityType: 'deal'
+    };
+    await db.activities.add(log);
+
+    await refreshData();
     setActiveTab('deals');
-    setDealFilter(null); // Clear filter when adding new deal
+    setDealFilter(null);
   };
 
-  const handleToggleTask = (id: string) => {
+  const handleToggleTask = async (id: string) => {
+    // Optimistic
     setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    await db.tasks.toggle(id);
   };
 
-  const handleAddTask = (title: string, date: string) => {
+  const handleAddTask = async (title: string, date: string) => {
     const newTask: Task = {
       id: `t${Date.now()}`,
       title,
       dueDate: date,
       completed: false
     };
-    setTasks([newTask, ...tasks]);
+    await db.tasks.add(newTask);
+    
+    const log: ActivityLog = {
+      id: `a${Date.now()}`,
+      type: 'create',
+      user: currentUser.name,
+      action: 'Created Task',
+      details: `Added task "${newTask.title}"`,
+      timestamp: new Date().toISOString(),
+      entityType: 'task'
+    };
+    await db.activities.add(log);
+    
+    await refreshData();
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    await db.notifications.markAllRead();
   };
 
-  const handleNotificationClick = (id: string) => {
+  const handleNotificationClick = async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    await db.notifications.markRead(id);
   };
 
   const handleDrillDown = (stage: DealStage) => {
@@ -113,7 +220,6 @@ const App: React.FC = () => {
 
   // AI Global Search Handler
   const handleGlobalSearch = async (e: React.KeyboardEvent<HTMLInputElement> | React.FormEvent) => {
-    // Only trigger on Enter key if it's a keyboard event
     if ('key' in e && e.key !== 'Enter') return;
     e.preventDefault();
 
@@ -138,15 +244,12 @@ const App: React.FC = () => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Notifications
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
-      // Profile Menu
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
-      // Search Modal
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setShowSearchModal(false);
       }
@@ -167,6 +270,18 @@ const App: React.FC = () => {
     { id: 'audit', label: 'Audit Log', icon: <ClipboardList size={20} /> },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-950 text-indigo-400 gap-3 flex-col">
+        <Database size={48} className="animate-pulse" />
+        <div className="flex items-center gap-2 text-slate-400">
+           <Loader2 className="animate-spin" size={20}/>
+           <span>Connecting to Nexus Database...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-950 font-sans text-slate-100 selection:bg-indigo-500 selection:text-white">
       
@@ -183,7 +298,7 @@ const App: React.FC = () => {
               key={item.id}
               onClick={() => {
                 navigateTo(item.id);
-                if (item.id === 'deals') setDealFilter(null); // Clear filter when manually navigating
+                if (item.id === 'deals') setDealFilter(null);
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                 activeTab === item.id 
@@ -430,7 +545,7 @@ const App: React.FC = () => {
             />
           )}
           {activeTab === 'tasks' && <Tasks tasks={tasks} onToggleTask={handleToggleTask} onAddTask={handleAddTask} />}
-          {activeTab === 'audit' && <AuditLog activities={activities} />}
+          {activeTab === 'audit' && <AuditLogComponent activities={activities} />}
           {activeTab === 'profile' && <Profile user={currentUser} onUpdate={handleUpdateProfile} />}
         </div>
 
