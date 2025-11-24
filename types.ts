@@ -1,4 +1,5 @@
-export type NavItem = 'dashboard' | 'contacts' | 'deals' | 'tasks' | 'audit' | 'settings';
+
+export type NavItem = 'dashboard' | 'contacts' | 'deals' | 'tasks' | 'audit' | 'settings' | 'profile';
 
 export enum DealStage {
   NEW = 'New Lead',
@@ -57,4 +58,20 @@ export interface Notification {
   timestamp: string;
   read: boolean;
   type: 'info' | 'success' | 'warning' | 'alert';
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+  notificationPreferences: {
+    email: boolean;
+    desktop: boolean;
+    marketing: boolean;
+  }
 }

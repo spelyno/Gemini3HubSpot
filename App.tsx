@@ -1,25 +1,31 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, Bell, Search, Menu, X, ClipboardList, LogOut, User } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Contacts from './components/Contacts';
 import Deals from './components/Deals';
 import Tasks from './components/Tasks';
 import AuditLog from './components/AuditLog';
-import { NavItem, Contact, Deal, Task, DealStage, ActivityLog, Notification } from './types';
-import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES, MOCK_NOTIFICATIONS } from './constants';
+import Profile from './components/Profile';
+import { NavItem, Contact, Deal, Task, DealStage, ActivityLog, Notification, UserProfile } from './types';
+import { MOCK_CONTACTS, MOCK_DEALS, MOCK_TASKS, MOCK_ACTIVITIES, MOCK_NOTIFICATIONS, MOCK_USER } from './constants';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItem>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // App State
+  const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USER);
   const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
   const [deals, setDeals] = useState<Deal[]>(MOCK_DEALS);
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
   const [activities] = useState<ActivityLog[]>(MOCK_ACTIVITIES);
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  
   const notificationRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -30,6 +36,10 @@ const App: React.FC = () => {
 
   const handleUpdateDeal = (updated: Deal) => {
     setDeals(prev => prev.map(d => d.id === updated.id ? updated : d));
+  };
+
+  const handleUpdateProfile = (updatedUser: UserProfile) => {
+    setCurrentUser(updatedUser);
   };
 
   const handleAddDeal = () => {
@@ -68,11 +78,16 @@ const App: React.FC = () => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
-  // Close notifications when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Notifications
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
+      }
+      // Profile Menu
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
       }
     };
 
@@ -136,7 +151,7 @@ const App: React.FC = () => {
               <Menu size={24} />
             </button>
             <h1 className="text-xl font-semibold text-slate-800 capitalize hidden sm:block">
-              {navItems.find(i => i.id === activeTab)?.label}
+              {activeTab === 'profile' ? 'My Profile' : navItems.find(i => i.id === activeTab)?.label}
             </h1>
           </div>
 
@@ -207,7 +222,49 @@ const App: React.FC = () => {
               )}
             </div>
 
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border-2 border-white shadow-sm cursor-pointer"></div>
+            {/* Profile Menu */}
+            <div className="relative" ref={profileMenuRef}>
+              <button 
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border-2 border-white shadow-sm cursor-pointer hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center justify-center text-white font-bold text-xs"
+              >
+                  {currentUser.avatar ? (
+                      <img src={currentUser.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                      <span>{currentUser.name.charAt(0)}</span>
+                  )}
+              </button>
+
+              {showProfileMenu && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-fade-in ring-1 ring-slate-200">
+                  <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                    <p className="text-sm font-semibold text-slate-800">{currentUser.name}</p>
+                    <p className="text-xs text-slate-500 truncate">{currentUser.email}</p>
+                  </div>
+                  <div className="p-2 space-y-1">
+                    <button 
+                      onClick={() => {
+                        setActiveTab('profile');
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg flex items-center gap-2 transition-colors"
+                    >
+                      <User size={16} />
+                      <span>My Profile</span>
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg flex items-center gap-2 transition-colors">
+                      <Settings size={16} />
+                      <span>Account Settings</span>
+                    </button>
+                    <div className="h-px bg-slate-100 my-1"></div>
+                    <button className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors">
+                      <LogOut size={16} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -248,6 +305,7 @@ const App: React.FC = () => {
           {activeTab === 'deals' && <Deals deals={deals} contacts={contacts} onUpdateDeal={handleUpdateDeal} onAddDeal={handleAddDeal} />}
           {activeTab === 'tasks' && <Tasks tasks={tasks} onToggleTask={handleToggleTask} onAddTask={handleAddTask} />}
           {activeTab === 'audit' && <AuditLog activities={activities} />}
+          {activeTab === 'profile' && <Profile user={currentUser} onUpdate={handleUpdateProfile} />}
         </div>
 
       </main>

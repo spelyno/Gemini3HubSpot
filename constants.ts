@@ -1,4 +1,5 @@
-import { Contact, Deal, DealStage, Task, ActivityLog, Notification } from './types';
+
+import { Contact, Deal, DealStage, Task, ActivityLog, Notification, UserProfile } from './types';
 
 export const MOCK_CONTACTS: Contact[] = [
   { id: 'c1', firstName: 'Alice', lastName: 'Johnson', email: 'alice@techcorp.com', phone: '+1 555-0101', company: 'TechCorp', position: 'CTO', lastContacted: '2023-10-25', notes: 'Interested in enterprise plan. Concerns about security compliance.' },
@@ -116,3 +117,18 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: 'alert' 
   },
 ];
+
+export const MOCK_USER: UserProfile = {
+  id: 'u1',
+  name: 'Sarah Sales',
+  email: 'sarah@nexus.com',
+  role: 'Senior Account Executive',
+  phone: '+1 (555) 019-2834',
+  location: 'San Francisco, CA',
+  bio: 'Dedicated sales professional with 5+ years of experience in SaaS. Focused on building long-term client relationships and driving revenue growth.',
+  notificationPreferences: {
+    email: true,
+    desktop: true,
+    marketing: false
+  }
+};
